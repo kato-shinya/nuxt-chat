@@ -15,7 +15,9 @@
             />
           </template>
           <template v-else>
-            <i class="material-icons text-7xl text-gray" @click="selectImage">person</i>
+            <i class="material-icons text-7xl text-gray" @click="selectImage"
+              >person</i
+            >
           </template>
           <input
             ref="image"
@@ -26,12 +28,13 @@
           />
         </div>
         <span v-show="form.imageUrl.errorMessage" class="text-red text-sm">
-          {{
-          form.imageUrl.errorMessage
-          }}
+          {{ form.imageUrl.errorMessage }}
         </span>
       </div>
-      <label class="block mt-8 mb-2 ml-2 uppercase tracking-wide text-darkGray text-s">名前</label>
+      <label
+        class="block mt-8 mb-2 ml-2 uppercase tracking-wide text-darkGray text-s"
+        >名前</label
+      >
       <div class="h-20 mb-6">
         <input
           v-model="form.name.val"
@@ -41,14 +44,14 @@
           @blur="validateName"
         />
         <span v-show="form.name.errorMessage" class="text-red text-sm">
-          {{
-          form.name.errorMessage
-          }}
+          {{ form.name.errorMessage }}
         </span>
       </div>
 
       <div class="flex">
-        <button class="w-full p-3 gradation rounded-full text-white">登録</button>
+        <button class="w-full p-3 gradation rounded-full text-white">
+          登録
+        </button>
       </div>
     </form>
   </div>
@@ -71,6 +74,11 @@ export default {
         }
       }
     };
+  },
+  computed: {
+    isValidateError() {
+      return this.form.name.errorMessage || this.form.imageUrl.errorMessage;
+    }
   },
   methods: {
     selectImage() {
@@ -137,9 +145,27 @@ export default {
 
       imageUrl.errorMessage = null;
     },
-    onSubmit() {
+    async onSubmit() {
+      const user = await this.$auth();
+
+      // 未ログインの場合
+      if (!user) this.$router.push("/login");
       this.validateName();
       this.validateImageUrl();
+
+      if (this.isValidateError) return;
+      try {
+        await this.$firestore
+          .collection("users")
+          .doc(user.uid)
+          .set({
+            name: this.form.name.val,
+            iconImageUrl: this.form.imageUrl.val
+          });
+        this.$router.push("/");
+      } catch (e) {
+        console.log(e);
+      }
     }
   }
 };
